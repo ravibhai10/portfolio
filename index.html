@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ravikumar gupta — Creative Full-Stack Developer</title>
+    <meta name="author" content="ravikumar gupta" />
+    <meta property="og:title" content="ravikumar gupta — Creative Full-Stack Developer" />
+    <meta
+      property="og:description"
+      content="Creative full-stack developer building premium websites, backend systems, interactive digital experiences and AI-powered products."
+    />
+    <meta
+      name="description"
+      content="Creative full-stack developer building premium websites, backend systems, interactive digital experiences and AI-powered products."
+    />
+    <meta name="theme-color" content="#16150f" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ravikumar gupta — Creative Full-Stack Developer" />
+    <meta
+      name="twitter:description"
+      content="Creative full-stack developer building premium websites, backend systems, interactive digital experiences and AI-powered products."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2316150f'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='20' fill='%23f5f3ef' text-anchor='middle'%3Er%3C/text%3E%3C/svg%3E"
+    />
+    <!-- Preload the turntable spritesheet so the hero paints instantly -->
+    <link rel="preload" as="image" href="/spritesheet/turntable_spritesheet.webp" type="image/webp" />
+    <!-- Display serif (variable) — swap so text never blocks paint -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Set the theme before first paint to avoid a flash of the wrong theme -->
+    <script>
+      try {
+        var t = localStorage.getItem('theme');
+        if (t !== 'light' && t !== 'dark')
+          t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

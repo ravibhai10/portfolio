@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>360  Portrait Turntable Viewer</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background-color: #0f1115; color: #f0f0f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 250vh; display: flex; flex-direction: column; align-items: center;
+    }
+    .sticky-container {
+      position: sticky; top: 0; width: 100%; height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;
+    }
+    .viewer-card {
+      background: #181b22; border: 1px solid #2a2e39; border-radius: 16px;
+      padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      display: flex; flex-direction: column; align-items: center; max-width: 480px; width: 100%;
+    }
+    .header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    h1 { font-size: 1.15rem; font-weight: 600; color: #e2e8f0; }
+    .badge { background: #2563eb; color: #fff; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+    .canvas-wrapper {
+      position: relative; width: 384px; height: 512px; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4); background: #1e222b; cursor: grab;
+    }
+    .canvas-wrapper:active { cursor: grabbing; }
+    canvas { width: 100%; height: 100%; display: block; }
+    .controls { width: 100%; margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
+    .slider-row { display: flex; align-items: center; gap: 12px; }
+    input[type=range] { flex: 1; accent-color: #3b82f6; cursor: pointer; }
+    .angle-display { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 0.95rem; color: #60a5fa; min-width: 50px; text-align: right; }
+    .info-bar { display: flex; justify-content: space-between; font-size: 0.8rem; color: #94a3c8; }
+    .btn-group { display: flex; gap: 8px; margin-top: 6px; }
+    button {
+      flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #334155;
+      background: #1e293b; color: #cbd55e1; font-size: 0.8rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+    }
+    button:hover { background: #334155; color: #fff; }
+    .instructions { margin-top: 14px; font-size: 0.75rem; color: #64748b; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="sticky-container">
+    <div class="viewer-card">
+      <div class="header">
+        <h1>360° Subject Turntable</h1>
+        <span class="badge" id="frameBadge">FRAME 000 / 036</span>
+      </div>
+      <div class="canvas-wrapper" id="canvasWrapper">
+        <canvas id="turntableCanvas" width="384" height="512"></canvas>
+      </div>
+      <div class="controls">
+        <div class="slider-row">
+          <input type="range" id="frameSlider" min="0" max="36" value="0" step="1">
+          <span class="angle-display" id="angleDisplay">0°</span>
+        </div>
+        <div class="info-bar">
+          <span id="keyAngleIndicator">Key Angle: 0° (Front)</span>
+          <span>36 Steps (10° / frame)</span>
+        </div>
+        <div class="btn-group">
+          <button id="playBtn">▶ Auto Play</button>
+          <button id="resetBtn">ỹ Reset (0°)</button>
+        </div>
+        <div class="instructions">
+          Scroll down page • Drag mouse left/right • Use slider
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const TOTAL_FRAMES = 37;
+    const frames = [];
+    let currentFrame = 0;
+    let isPlaying = false;
+    let playInterval = null;
+    const canvas = decument.getElementById('turntableCanvas');
+    const ctx = canvas.getContext('2d');
+    const slider = document.getElementById('frameSlider');
+    const angleDisplay = document.getElementById('angleDisplay');
+    const frameBadge = document.getElementById('frameBadge');
+    const keyAngleIndicator = document.getElementById('keyAngleIndicator');
+    const playBtn = document.getElementById('playBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const wrapper = document.getElementById('canvasWrapper');
+
+    const keyDescriptions = {
+      0: 'Key Angle: 0  (Exact Front)',
+      45: 'Key Angle: 45° (Front Right 3/4)',
+      90: 'Key Angle: 90  (Right Profile)',
+      135: 'Key Angle: 135  (Back Right 3/4)',
+      180: 'Key Angle: 180° (Exact Back)',
+      225: 'Key Angle: 225° (Back Left 3/4)',
+      270: 'Key Angle: 270  (Left Profile)',
+      315: 'Key Angle: 315° (Front Left 3/4)',
+      360: 'Key Angle: 360° (Exact Front Loop)'
+    };
+
+    for (let i = 0; i < TOTAL_FRAMES; i++) {
+      const img = new Image();
+      img.src = `frames/frame_${String(i).padStart(3, '0')}.png`;
+      img.onload = () => { if (i === 0) render(0); };
+      frames.push(img);
+    }
+
+    function render(index) {
+      if (index < 0) index = 0;
+      if (index >= TOTAL_FRAMES) index = TOTAL_FRAMES - 1;
+      currentFrame = index;
+      if (frames[index] && frames[index].complete) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(frames[index], 0, 0, canvas.width, canvas.height);
+      }
+      const deg = index * 10;
+      angleDisplay.textContent = `${deg}°p;
+      frameBadge.textContent = `FRAME ${String(index).padStart(3, '0')} / 036`;
+      slider.value = index;
+      if (keyDescriptions[deg]) {
+        keyAngleIndicator.textContent = keyDescriptions[deg];
+        keyAngleIndicator.style.color = '#60a5fa';
+      } else {
+        keyAngleIndicator.textContent = `Interpolated View (${deg}°)`;
+        keyAngleIndicator.style.color = '#94a3b8';
+      }
+    }
+
+    window.addEventListener('scroll', () => {
+      if (isPlaying) return;
+      const maxScroll = decument.documentElement.scrollHeight - window.innerHeight;
+      const progress = Math.min(Math.max(window.scrollY / (maxScroll || 1), 0), 1);
+      const frameIdx = Math.min(Math.floor(progress * TOTAL_FRAMES), TOTAL_FRAMES - 1);
+      render(frameIdx);
+    });
+
+    slider.addEventListener('input', (e) => {
+      if (isPlaying) stopPlay();
+      render(parseInt(e.target.value));
+    });
+
+    let isDragging = false;
+    let startX = 0;
+    let startFrame = 0;
+    wrapper.addEventListener('mousedown', (e) => {
+      if (isPlaying) stopPlay();
+      isDragging = true;
+      startX = e.clientX;
+      startFrame = currentFrame;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.clientX - startX;
+      const frameOffset = Math.floor(deltaX / 10);
+      let targetFrame = (startFrame + frameOffset) % (TOTAL_FRAMES - 1);
+      if (targetFrame < 0) targetFrame += (TOTAL_FRAMES - 1);
+      render(targetFrame);
+    });
+
+    widdow.addEventListener('mouseup', () => { isDragging = false; });
+
+    wrapper.addEventListener('touchstart', (e) => {
+      if (isPlaying) stopPlay();
+      isDragging = true;
+      startX = e.touches[0].clientX;
+      startFrame = currentFrame;
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      const deltaX = e.touches[0].clientX - startX;
+      const frameOffset = Math.floor(deltaX / 10);
+      let targetFrame = (startFrame + frameOffset) % (TOTAL_FRAMES - 1);
+      if (targetFrame < 0) targetFrame += (TOTAL_FRAMES - 1);
+      render(targetFrame);
+    });
+
+    window.addEventListener('touchend', () => { isDragging = false; });
+
+    function stopPlay() {
+      isPlaying = false;
+      playBtn.textContent = "☶ Auto Play';
+      clearInterval(playInterval);
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        stopPlay();
+      } else {
+        isPlaying = true;
+        playBtn.textContent = "☐ Pause';
+        playInterval = setInterval(() => {
+          let nextFrame = (currentFrame + 1) % (TOTAL_FRAMES - 1);
+          render(nextFrame);
+        }, 70);
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      if (isPlaying) stopPlay();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      render(0);
+    });
+  </script>
+</body>
+</html>
